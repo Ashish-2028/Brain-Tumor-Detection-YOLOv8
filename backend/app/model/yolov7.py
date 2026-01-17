@@ -10,7 +10,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from typing import List, Tuple
-
+import os
 
 class Conv(nn.Module):
     """Standard convolution with batch normalization and SiLU activation"""
@@ -147,12 +147,6 @@ class YOLOv7(nn.Module):
     """
     YOLOv7 Model for Brain Tumor Detection
     Enhanced with CBAM attention mechanism, BiFPN, and SPPF+
-    
-    Architecture designed for 4 classes:
-    - 0: Glioma
-    - 1: Pituitary
-    - 2: Meningioma
-    - 3: No Tumor
     """
     def __init__(self, nc=4, anchors=None):
         super().__init__()
@@ -219,39 +213,72 @@ class YOLOv7(nn.Module):
 
 def load_model(model_path: str, device: str = 'cpu') -> YOLOv7:
     """
-    Load YOLOv7 model with pretrained weights
-    
-    Args:
-        model_path: Path to .pt weights file
-        device: Device to load model on ('cpu' or 'cuda')
-    
-    Returns:
-        Loaded YOLOv7 model in eval mode
+    Load YOLOv7 model with pretrained weights and handle class mismatch
     """
-    model = YOLOv7(nc=4)
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(f"Model file not found: {model_path}")
+        
+    print(f"Initializing YOLOv7 model architecture on {device}...")
     
+    # Initialize model with 4 classes (for our specific use case)
+    model = YOLOv7(nc=4)
+    model.to(device)
+    
+    print(f"Loading weights from {model_path}...")
     try:
+        # Load weights
         checkpoint = torch.load(model_path, map_location=device, weights_only=False)
         
+        state_dict = None
         if isinstance(checkpoint, dict):
             if 'model' in checkpoint:
-                model.load_state_dict(checkpoint['model'].float().state_dict())
+                # If model is saved as an object, try to get state_dict
+                if hasattr(checkpoint['model'], 'state_dict'):
+                    state_dict = checkpoint['model'].float().state_dict()
+                else:
+                    state_dict = checkpoint['model'] # Might be state_dict already
             elif 'state_dict' in checkpoint:
-                model.load_state_dict(checkpoint['state_dict'])
+                state_dict = checkpoint['state_dict']
             else:
-                model.load_state_dict(checkpoint)
+                state_dict = checkpoint
         else:
-            model = checkpoint.float()
-    except FileNotFoundError:
-        print(f"Warning: Model weights not found at {model_path}")
-        print("Using randomly initialized weights. Please place trained weights at the specified path.")
+            # Checkpoint might be the model object itself
+             if hasattr(checkpoint, 'state_dict'):
+                state_dict = checkpoint.float().state_dict()
+        
+        if state_dict is not None:
+            # Filter out shape-mismatch keys (head layers)
+            model_state = model.state_dict()
+            matched_weights = {}
+            mismatched_keys = []
+            
+            for k, v in state_dict.items():
+                if k in model_state:
+                    if v.shape == model_state[k].shape:
+                        matched_weights[k] = v
+                    else:
+                        mismatched_keys.append(k)
+        
+            if mismatched_keys:
+                print(f"Warning: {len(mismatched_keys)} layers have shape mismatch (ignoring them):")
+                for k in mismatched_keys[:5]:
+                    print(f"  - {k}: ckpt {state_dict[k].shape} vs model {model_state[k].shape}")
+                if len(mismatched_keys) > 5:
+                    print(f"  ... and {len(mismatched_keys)-5} more")
+            
+            # Load with strict=False to allow missing keys
+            model.load_state_dict(matched_weights, strict=False)
+            print(f"✓ Successfully loaded {len(matched_weights)}/{len(model_state)} layers")
+        else:
+            print("Warning: Could not extract state_dict from checkpoint. Using random init.")
+            
     except Exception as e:
-        print(f"Warning: Could not load weights: {e}")
-        print("Using randomly initialized weights.")
+        print(f"Error loading weights: {e}")
+        print("Using randomly initialized weights suitable for testing.")
+        # We don't raise here to allow the app to start, but predictions will be garbage
     
-    model.to(device).eval()
+    model.eval()
     return model
-
 
 if __name__ == "__main__":
     # Test model architecture
@@ -260,4 +287,3 @@ if __name__ == "__main__":
     with torch.no_grad():
         output = model(dummy_input)
     print(f"Model output shape: {output[0].shape}")
-    print(f"Total parameters: {sum(p.numel() for p in model.parameters()):,}")

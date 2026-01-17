@@ -73,10 +73,12 @@ async def startup_event():
     
     try:
         inference_service.load_model()
-        logger.info("Model loaded successfully!")
+        if inference_service.model_loaded:
+            logger.info("Model loaded successfully!")
+        else:
+            logger.warning("Model loading failed (check logs for details)")
     except Exception as e:
         logger.error(f"Failed to load model: {e}")
-        logger.warning("API will start but predictions may fail")
 
 
 @app.get("/")

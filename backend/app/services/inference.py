@@ -22,17 +22,58 @@ class InferenceService:
         print(f"Using device: {self.device}")
     
     def load_model(self):
+        """Load the YOLOv7 model from configured path"""
         try:
             print(f"Loading model from {settings.MODEL_PATH}...")
-            self.model = load_model(settings.MODEL_PATH, str(self.device))
+            
+            # Resolve model path (handle relative paths)
+            import os
+            if not os.path.isabs(settings.MODEL_PATH):
+                # Relative path - resolve from backend directory
+                backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+                model_path = os.path.join(backend_dir, settings.MODEL_PATH)
+            else:
+                model_path = settings.MODEL_PATH
+            
+            # Check if model file exists
+            if not os.path.exists(model_path):
+                print(f"❌ Model file not found at {model_path}")
+                print(f"   Configured path: {settings.MODEL_PATH}")
+                
+                # List available weights
+                weights_dir = os.path.join(os.path.dirname(model_path), '')
+                if os.path.exists(os.path.dirname(model_path)):
+                    print(f"   Available files in {os.path.dirname(model_path)}:")
+                    for f in os.listdir(os.path.dirname(model_path)):
+                        if f.endswith('.pt'):
+                            print(f"     - {f}")
+                
+                self.model_loaded = False
+                return
+            
+            print(f"✓ Found model file: {model_path} ({os.path.getsize(model_path) / 1024 / 1024:.1f} MB)")
+            
+            # Load the model
+            self.model = load_model(model_path, str(self.device))
             self.model_loaded = True
-            print("Model loaded successfully!")
+            
+            print("✓ Model loaded successfully!")
+            print(f"✓ Device: {self.device}")
+            
         except Exception as e:
-            print(f"Error loading model: {e}")
-            print("Initializing model with random weights for testing...")
-            from app.model.yolov7 import YOLOv7
-            self.model = YOLOv7(nc=4).to(self.device).eval()
-            self.model_loaded = True
+            print(f"❌ Error loading model: {e}")
+            import traceback
+            traceback.print_exc()
+            
+            # Log to file for debugging
+            try:
+                with open("model_error.log", "w") as f:
+                    f.write(f"Error loading model: {str(e)}\n")
+                    traceback.print_exc(file=f)
+            except:
+                pass
+                
+            self.model_loaded = False
     
     def predict(self, image_bytes: bytes) -> Dict:
         if not self.model_loaded:

@@ -1,4 +1,6 @@
 import torch
+import torch.nn.functional as F
+import torchvision.ops
 import numpy as np
 from typing import List, Dict, Tuple
 import cv2
@@ -173,7 +175,3 @@ def draw_detections(image: np.ndarray, detections: List[Dict], thickness: int = 
         cv2.putText(img, label_text, (x1, y1 - baseline), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), thickness)
     
     return img
-
-
-# Import torchvision for NMS
-import torchvision.ops
