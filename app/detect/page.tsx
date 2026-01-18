@@ -8,6 +8,7 @@ import ImagePreview from '@/components/ImagePreview';
 import Button from '@/components/Button';
 import Card from '@/components/Card';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import AnalysisProgress from '@/components/AnalysisProgress';
 import { predictTumor, APIError } from '@/lib/api';
 import { formatFileSize } from '@/lib/utils';
 
@@ -154,14 +155,7 @@ export default function DetectPage() {
               </Card>
             )}
 
-            {isProcessing ? (
-              <Card>
-                <LoadingSpinner message="Analyzing MRI scan..." />
-                <p className="text-center text-gray-500 text-sm mt-4">
-                  This may take a few seconds
-                </p>
-              </Card>
-            ) : (
+            {!isProcessing && (
               <div className="flex gap-4">
                 <Button onClick={handleAnalyze} fullWidth>
                   <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -202,6 +196,9 @@ export default function DetectPage() {
           </ul>
         </div>
       </main>
+
+      {/* Progress Modal */}
+      <AnalysisProgress isProcessing={isProcessing} />
     </div>
   );
 }

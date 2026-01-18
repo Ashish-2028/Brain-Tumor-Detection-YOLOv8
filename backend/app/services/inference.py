@@ -77,7 +77,18 @@ class InferenceService:
     
     def predict(self, image_bytes: bytes) -> Dict:
         if not self.model_loaded:
-            raise RuntimeError("Model not loaded. Call load_model() first.")
+            # Return informative error with instructions
+            return {
+                'success': False,
+                'error': 'Model not loaded. Please ensure the model file exists and restart the server.',
+                'tumor_type': None,
+                'confidence': 0.0,
+                'boxes': [],
+                'note': 'Run: cd backend && python3 create_demo_model.py OR train your model with ./run_pipeline.sh'
+            }
+        
+        # Use the trained model for real inference
+        print(f"🔬 Running inference with trained model: {settings.MODEL_PATH}")
         
         try:
             start_time = time.time()

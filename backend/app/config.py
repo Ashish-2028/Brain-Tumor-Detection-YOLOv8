@@ -8,7 +8,7 @@ class Settings:
     PORT: int = int(os.getenv("PORT", 8000))
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
     
-    MODEL_PATH: str = os.getenv("MODEL_PATH", "weights/yolov7.pt")
+    MODEL_PATH: str = os.getenv("MODEL_PATH", "weights/training_output/yolov7_brain_tumor_best.pt")
     CONFIDENCE_THRESHOLD: float = float(os.getenv("CONFIDENCE_THRESHOLD", 0.25))
     IOU_THRESHOLD: float = float(os.getenv("IOU_THRESHOLD", 0.45))
     IMAGE_SIZE: int = int(os.getenv("IMAGE_SIZE", 640))
@@ -16,12 +16,18 @@ class Settings:
     # CORS Configuration
     CORS_ORIGINS: list = os.getenv("CORS_ORIGINS", "http://localhost:3000").split(",")
     
-    # Class Names (0: Glioma, 1: Pituitary, 2: Meningioma, 3: No Tumor)
+    # Class Names - Can be configured for different models
+    # Single class mode (trained model)
     CLASS_NAMES: dict = {
-        0: "Glioma",
-        1: "Pituitary",
-        2: "Meningioma",
-        3: "No Tumor"
+        0: "Tumor"
     }
+    
+    # Multi-class mode (if training with labeled tumor types)
+    # CLASS_NAMES: dict = {
+    #     0: "Glioma",
+    #     1: "Pituitary",
+    #     2: "Meningioma",
+    #     3: "No Tumor"
+    # }
 
 settings = Settings()

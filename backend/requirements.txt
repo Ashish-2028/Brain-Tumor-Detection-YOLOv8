@@ -4,12 +4,9 @@ python-multipart
 torch
 torchvision
 opencv-python
-
 numpy
 pydantic
 python-dotenv
-
-
-
-
+pillow
 tqdm
+matplotlib

@@ -220,8 +220,8 @@ def load_model(model_path: str, device: str = 'cpu') -> YOLOv7:
         
     print(f"Initializing YOLOv7 model architecture on {device}...")
     
-    # Initialize model with 4 classes (for our specific use case)
-    model = YOLOv7(nc=4)
+    # Initialize model with 1 class (Tumor) to match the trained model
+    model = YOLOv7(nc=1)
     model.to(device)
     
     print(f"Loading weights from {model_path}...")

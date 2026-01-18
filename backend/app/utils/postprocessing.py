@@ -10,7 +10,7 @@ def non_max_suppression(
     prediction: torch.Tensor,
     conf_thres: float = 0.25,
     iou_thres: float = 0.45,
-    max_det: int = 300
+    max_det: int = 10
 ) -> List[torch.Tensor]:
     nc = prediction.shape[2] - 5
     xc = prediction[..., 4] > conf_thres
