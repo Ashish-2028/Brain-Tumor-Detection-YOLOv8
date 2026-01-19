@@ -1,0 +1,35 @@
+INFO:     Started server process [49586]
+INFO:     Waiting for application startup.
+2026-01-18 02:39:32,743 - app.main - INFO - Starting Brain Tumor Detection API...
+2026-01-18 02:39:32,743 - app.main - INFO - Environment: development
+2026-01-18 02:39:32,743 - app.main - INFO - CORS Origins: ['http://localhost:3000', 'http://127.0.0.1:3000']
+2026-01-18 02:39:32,798 - app.main - INFO - Model loaded successfully!
+INFO:     Application startup complete.
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+Using device: cpu
+Loading model from weights/yolov7_brain_tumor.pt...
+✓ Found model file: /Users/sahilrajdubey/Developer/btd/backend/weights/yolov7_brain_tumor.pt (18.5 MB)
+Initializing YOLOv7 model architecture on cpu...
+Loading weights from /Users/sahilrajdubey/Developer/btd/backend/weights/yolov7_brain_tumor.pt...
+Warning: 6 layers have shape mismatch (ignoring them):
+  - detect.m.0.weight: ckpt torch.Size([18, 128, 1, 1]) vs model torch.Size([27, 128, 1, 1])
+  - detect.m.0.bias: ckpt torch.Size([18]) vs model torch.Size([27])
+  - detect.m.1.weight: ckpt torch.Size([18, 256, 1, 1]) vs model torch.Size([27, 256, 1, 1])
+  - detect.m.1.bias: ckpt torch.Size([18]) vs model torch.Size([27])
+  - detect.m.2.weight: ckpt torch.Size([18, 512, 1, 1]) vs model torch.Size([27, 512, 1, 1])
+  ... and 1 more
+✓ Successfully loaded 298/304 layers
+✓ Model loaded successfully!
+✓ Device: cpu
+INFO:     127.0.0.1:65315 - "GET /model-info HTTP/1.1" 200 OK
+2026-01-18 02:41:22,924 - app.main - INFO - Processing image: vis1-m10_axial2-12.webp (16304 bytes)
+2026-01-18 02:41:23,014 - app.main - INFO - Prediction successful: Tumor [DEMO] (confidence: 0.91, time: 0.125s)
+⚠️  Using demo model - generating simulated detection
+INFO:     127.0.0.1:65371 - "POST /predict HTTP/1.1" 200 OK
+2026-01-18 02:42:07,299 - app.main - INFO - Processing image: images.jpeg (6985 bytes)
+2026-01-18 02:42:07,442 - app.main - INFO - Prediction successful: Tumor [DEMO] (confidence: 0.82, time: 0.125s)
+⚠️  Using demo model - generating simulated detection
+INFO:     127.0.0.1:65382 - "POST /predict HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65396 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65399 - "GET /model-info HTTP/1.1" 200 OK
+INFO:     127.0.0.1:65401 - "GET /model-info HTTP/1.1" 200 OK
