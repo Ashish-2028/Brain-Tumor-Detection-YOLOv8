@@ -4,7 +4,7 @@
 
 NeuroSight AI provides a stunning, high-performance web interface designed for medical professionals. Instantly analyze MRI scans to detect and classify Gliomas, Pituitary tumors, and Meningiomas with precision.
 
-![Next.js](https://img.shields.io/badge/Frontend-Next.js%2015-black)
+![Next.js](https://img.shields.io/badge/Frontend-Next.js%2016-black)
 ![Tailwind](https://img.shields.io/badge/Styling-Tailwind%20CSS-blue)
 ![FastAPI](https://img.shields.io/badge/Backend-FastAPI-teal)
 ![YOLOv8](https://img.shields.io/badge/Model-YOLOv8-green)
@@ -44,27 +44,35 @@ Before running the system, place your custom-trained YOLOv8 `.pt` weight files i
 
 ```bash
 # Place your trained models here:
-backend/weights/yolov8_nano.pt
-backend/weights/yolov8_medium.pt
+backend/weights/yolov8/yolov8n.pt
+backend/weights/yolov8/yolov8m.pt
 ```
 
-### 2. Start the Backend API (FastAPI)
+### 2. Easiest Way — One Command (Recommended)
 
-Navigate to the backend directory, install the Python requirements, and spin up the Uvicorn server:
+From the project root, simply run:
+
+```bash
+bash start.sh
+```
+
+This automatically activates the virtual environment, starts the backend (waits 12 seconds for YOLOv8 models to load), then starts the frontend. Press `Ctrl+C` to stop everything.
+
+### 3. Manual Start (Two Terminals)
+
+**Terminal 1 — Backend:**
 
 ```bash
 cd backend
 python3 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
-python3 -m uvicorn app.main:app
+python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
 _The API will start listening on `http://localhost:8000`_
 
-### 3. Start the Frontend Application (Next.js)
-
-In a separate terminal, install the Node packages and start the frontend development server:
+**Terminal 2 — Frontend:**
 
 ```bash
 # In the root repository folder
@@ -133,7 +141,8 @@ NeuroSight-AI/
 ├── lib/                      # Utilities
 │   ├── api.ts                # Cross-Origin Resouce fetchers
 │   └── utils.ts              # Bounding Box color mapping algorithms
-└── tailwind.config.ts        # Design system styles
+├── postcss.config.mjs        # PostCSS / Tailwind CSS config
+└── start.sh                  # One-command startup script
 ```
 
 ---

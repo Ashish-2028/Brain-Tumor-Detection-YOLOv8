@@ -4,13 +4,17 @@ echo "🧠 Brain Tumor Detection System - Quick Start"
 echo "=============================================="
 echo ""
 
-# Check if virtual environment exists
-if [ ! -d "backend/venv" ]; then
-    echo "❌ Virtual environment not found!"
-    echo "Please run setup first:"
-    echo "  cd backend && python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt"
+# STRICT check: Virtual environment MUST exist
+if [ ! -f "backend/venv/bin/activate" ]; then
+    echo "❌ Virtual environment not found at backend/venv/"
+    echo "Please set it up first:"
+    echo "  cd backend"
+    echo "  python3 -m venv venv"
+    echo "  source venv/bin/activate"
+    echo "  pip install -r requirements.txt"
     exit 1
 fi
+echo "✅ Virtual environment found."
 
 # Check if node_modules exists
 if [ ! -d "node_modules" ]; then
@@ -22,7 +26,7 @@ fi
 echo "✅ Starting Backend Server..."
 cd backend
 source venv/bin/activate
-uvicorn app.main:app --host 0.0.0.0 --port 8000 &
+python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8000 &
 BACKEND_PID=$!
 cd ..
 
@@ -31,8 +35,8 @@ echo "   API: http://localhost:8000"
 echo "   Docs: http://localhost:8000/docs"
 echo ""
 
-# Wait for backend to start
-sleep 5
+# Wait for backend to fully load both YOLO models (takes ~8-10s on CPU)
+sleep 12
 
 echo "✅ Starting Frontend Server..."
 npm run dev &
