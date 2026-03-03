@@ -1,140 +1,130 @@
 import torch
-import numpy as np
-from typing import Dict, List, Tuple
+from typing import Dict, Tuple
 import time
+import os
+import io
+from PIL import Image
+from ultralytics import YOLO
 
-from app.model import load_model
-from app.utils import (
-    preprocess_image,
-    scale_boxes,
-    non_max_suppression,
-    format_detections,
-    get_primary_prediction
-)
 from app.config import settings
-
 
 class InferenceService:
     def __init__(self):
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.model = None
-        self.model_loaded = False
+        self.models = {
+            "nano": None,
+            "medium": None
+        }
+        self.model_loaded = {
+            "nano": False,
+            "medium": False
+        }
         print(f"Using device: {self.device}")
     
     def load_model(self):
-        """Load the YOLOv7 model from configured path"""
+        """Load both YOLOv8 models from configured paths"""
+        
+        backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+        
+        # Load Nano Model
+        nano_path = settings.NANO_MODEL_PATH if os.path.isabs(settings.NANO_MODEL_PATH) else os.path.join(backend_dir, settings.NANO_MODEL_PATH)
         try:
-            print(f"Loading model from {settings.MODEL_PATH}...")
-            
-            # Resolve model path (handle relative paths)
-            import os
-            if not os.path.isabs(settings.MODEL_PATH):
-                # Relative path - resolve from backend directory
-                backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
-                model_path = os.path.join(backend_dir, settings.MODEL_PATH)
+            if os.path.exists(nano_path):
+                self.models["nano"] = YOLO(nano_path)
+                # Move to device if needed, ultralytics handles this mostly automatically, but we can force it
+                self.models["nano"].to(self.device)
+                self.model_loaded["nano"] = True
+                print(f"✓ Nano model loaded successfully from {nano_path}")
             else:
-                model_path = settings.MODEL_PATH
-            
-            # Check if model file exists
-            if not os.path.exists(model_path):
-                print(f"❌ Model file not found at {model_path}")
-                print(f"   Configured path: {settings.MODEL_PATH}")
-                
-                # List available weights
-                weights_dir = os.path.join(os.path.dirname(model_path), '')
-                if os.path.exists(os.path.dirname(model_path)):
-                    print(f"   Available files in {os.path.dirname(model_path)}:")
-                    for f in os.listdir(os.path.dirname(model_path)):
-                        if f.endswith('.pt'):
-                            print(f"     - {f}")
-                
-                self.model_loaded = False
-                return
-            
-            print(f"✓ Found model file: {model_path} ({os.path.getsize(model_path) / 1024 / 1024:.1f} MB)")
-            
-            # Load the model
-            self.model = load_model(model_path, str(self.device))
-            self.model_loaded = True
-            
-            print("✓ Model loaded successfully!")
-            print(f"✓ Device: {self.device}")
-            
+                print(f"❌ Nano model not found at {nano_path}")
         except Exception as e:
-            print(f"❌ Error loading model: {e}")
-            import traceback
-            traceback.print_exc()
+            print(f"❌ Error loading Nano model: {e}")
             
-            # Log to file for debugging
-            try:
-                with open("model_error.log", "w") as f:
-                    f.write(f"Error loading model: {str(e)}\n")
-                    traceback.print_exc(file=f)
-            except:
-                pass
-                
-            self.model_loaded = False
-    
-    def predict(self, image_bytes: bytes) -> Dict:
-        if not self.model_loaded:
-            # Return informative error with instructions
+        # Load Medium Model
+        medium_path = settings.MEDIUM_MODEL_PATH if os.path.isabs(settings.MEDIUM_MODEL_PATH) else os.path.join(backend_dir, settings.MEDIUM_MODEL_PATH)
+        try:
+            if os.path.exists(medium_path):
+                self.models["medium"] = YOLO(medium_path)
+                self.models["medium"].to(self.device)
+                self.model_loaded["medium"] = True
+                print(f"✓ Medium model loaded successfully from {medium_path}")
+            else:
+                print(f"❌ Medium model not found at {medium_path}")
+        except Exception as e:
+            print(f"❌ Error loading Medium model: {e}")
+            
+    def predict(self, image_bytes: bytes, model_version: str = "medium") -> Dict:
+        if model_version not in ["nano", "medium"]:
+            model_version = "medium"
+            
+        if not self.model_loaded[model_version]:
             return {
                 'success': False,
-                'error': 'Model not loaded. Please ensure the model file exists and restart the server.',
+                'error': f'Model {model_version} not loaded. Please ensure the {model_version} model file exists and restart the server.',
                 'tumor_type': None,
                 'confidence': 0.0,
                 'boxes': [],
-                'note': 'Run: cd backend && python3 create_demo_model.py OR train your model with ./run_pipeline.sh'
+                'note': 'Put your trained models in the weights directory'
             }
         
-        # Use the trained model for real inference
-        print(f"🔬 Running inference with trained model: {settings.MODEL_PATH}")
+        print(f"🔬 Running inference with {model_version} model!")
         
         try:
             start_time = time.time()
             
-            img_tensor, img_orig, preprocess_info = preprocess_image(
-                image_bytes, 
-                settings.IMAGE_SIZE
+            # Load image from bytes using PIL
+            image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+            
+            # Run inference using Ultralytics YOLO
+            model = self.models[model_version]
+            results = model.predict(
+                source=image,
+                conf=settings.CONFIDENCE_THRESHOLD,
+                iou=settings.IOU_THRESHOLD,
+                imgsz=settings.IMAGE_SIZE,
+                verbose=False
             )
-            ratio, pad = preprocess_info
             
-            img_tensor = img_tensor.to(self.device)
+            result = results[0]  # Get the first result
             
-            with torch.no_grad():
-                predictions = self.model(img_tensor)
-                
-                if isinstance(predictions, tuple):
-                    predictions = predictions[0]
+            # Format detections
+            boxes = []
+            max_conf = 0.0
+            primary_tumor_type = "No Tumor"
             
-            detections = non_max_suppression(
-                predictions,
-                conf_thres=settings.CONFIDENCE_THRESHOLD,
-                iou_thres=settings.IOU_THRESHOLD
-            )[0]
-            
-            if len(detections):
-                detections[:, :4] = self._scale_coords(
-                    img_tensor.shape[2:],
-                    detections[:, :4],
-                    img_orig.shape,
-                    ratio,
-                    pad
-                )
-            
-            boxes = format_detections(detections, settings.CLASS_NAMES)
-            
-            tumor_type, confidence = get_primary_prediction(boxes, settings.CLASS_NAMES)
+            if len(result.boxes) > 0:
+                for box in result.boxes:
+                    # class_id = int(box.cls[0].item())
+                    # YOLOv8 custom trained models will have class name "Tumor" or similar usually at index 0
+                    # If multiple classes, we can get the name from the result.names dict.
+                    class_name = result.names[int(box.cls[0].item())]
+                    confidence = float(box.conf[0].item())
+                    
+                    # Extract bounding box coordinates [x1, y1, x2, y2]
+                    x1, y1, x2, y2 = box.xyxy[0].tolist()
+                    
+                    boxes.append({
+                        "x1": round(x1, 2),
+                        "y1": round(y1, 2),
+                        "x2": round(x2, 2),
+                        "y2": round(y2, 2),
+                        "label": class_name,
+                        "score": round(confidence, 4)
+                    })
+                    
+                    if confidence > max_conf:
+                        max_conf = confidence
+                        primary_tumor_type = class_name
             
             inference_time = time.time() - start_time
             
             return {
                 'success': True,
-                'tumor_type': tumor_type,
-                'confidence': float(confidence),
+                'tumor_type': primary_tumor_type,
+                'confidence': float(max_conf),
                 'boxes': boxes,
                 'inference_time': round(inference_time, 3),
-                'image_shape': img_orig.shape[:2]
+                'image_shape': [image.height, image.width]
             }
         
         except Exception as e:
@@ -146,40 +136,24 @@ class InferenceService:
                 'boxes': []
             }
     
-    def _scale_coords(
-        self,
-        img1_shape: Tuple[int, int],
-        coords: torch.Tensor,
-        img0_shape: Tuple[int, int],
-        ratio: Tuple[float, float],
-        pad: Tuple[float, float]
-    ) -> torch.Tensor:
-        coords[:, [0, 2]] -= pad[0]
-        coords[:, [1, 3]] -= pad[1]
-        
-        coords[:, [0, 2]] /= ratio[0]
-        coords[:, [1, 3]] /= ratio[1]
-        
-        coords[:, [0, 2]] = coords[:, [0, 2]].clamp(0, img0_shape[1])
-        coords[:, [1, 3]] = coords[:, [1, 3]].clamp(0, img0_shape[0])
-        
-        return coords
-    
     def get_model_info(self) -> Dict:
-        if not self.model_loaded:
-            return {'loaded': False}
+        is_nano_loaded = self.model_loaded["nano"]
+        is_medium_loaded = self.model_loaded["medium"]
         
-        total_params = sum(p.numel() for p in self.model.parameters())
-        trainable_params = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
-        
-        return {
-            'loaded': True,
+        info = {
+            'loaded': is_nano_loaded or is_medium_loaded,
+            'nano_loaded': is_nano_loaded,
+            'medium_loaded': is_medium_loaded,
             'device': str(self.device),
-            'total_parameters': total_params,
-            'trainable_parameters': trainable_params,
-            'model_path': settings.MODEL_PATH,
-            'classes': settings.CLASS_NAMES
         }
+        
+        if is_medium_loaded:
+            model = self.models["medium"]
+            # To get total parameters in standard PyTorch format
+            info['total_parameters'] = sum(p.numel() for p in model.model.parameters())
+            info['classes'] = model.names
+            
+        return info
 
 
 inference_service = InferenceService()

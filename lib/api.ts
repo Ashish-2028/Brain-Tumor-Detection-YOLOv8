@@ -34,9 +34,10 @@ async function fetchWithTimeout(url: string, options: RequestInit, timeout: numb
   }
 }
 
-export async function predictTumor(file: File): Promise<PredictionResponse> {
+export async function predictTumor(file: File, modelVersion: 'nano' | 'medium' = 'medium'): Promise<PredictionResponse> {
   const formData = new FormData();
   formData.append('file', file);
+  formData.append('model_version', modelVersion);
 
   try {
     const response = await fetchWithTimeout(

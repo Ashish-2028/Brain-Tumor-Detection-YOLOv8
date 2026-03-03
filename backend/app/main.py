@@ -107,8 +107,13 @@ async def get_model_info():
     return inference_service.get_model_info()
 
 
+from fastapi import Form
+
 @app.post("/predict", response_model=PredictionResponse)
-async def predict_tumor(file: UploadFile = File(...)):
+async def predict_tumor(
+    file: UploadFile = File(...),
+    model_version: str = Form("medium")
+):
     if not file.content_type or not file.content_type.startswith('image/'):
         raise HTTPException(
             status_code=400,
@@ -128,10 +133,10 @@ async def predict_tumor(file: UploadFile = File(...)):
             detail="Empty file uploaded."
         )
     
-    logger.info(f"Processing image: {file.filename} ({len(contents)} bytes)")
+    logger.info(f"Processing image: {file.filename} ({len(contents)} bytes) with model: {model_version}")
     
     try:
-        result = inference_service.predict(contents)
+        result = inference_service.predict(contents, model_version=model_version)
         
         if not result['success']:
             raise HTTPException(

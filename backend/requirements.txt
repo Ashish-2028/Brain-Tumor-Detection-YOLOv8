@@ -10,3 +10,4 @@ python-dotenv
 pillow
 tqdm
 matplotlib
+ultralytics>=8.0.0

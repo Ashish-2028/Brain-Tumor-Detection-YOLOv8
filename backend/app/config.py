@@ -8,7 +8,8 @@ class Settings:
     PORT: int = int(os.getenv("PORT", 8000))
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
     
-    MODEL_PATH: str = os.getenv("MODEL_PATH", "weights/training_output/yolov7_brain_tumor_best.pt")
+    NANO_MODEL_PATH: str = os.getenv("NANO_MODEL_PATH", "weights/yolov8/yolov8n.pt")
+    MEDIUM_MODEL_PATH: str = os.getenv("MEDIUM_MODEL_PATH", "weights/yolov8/yolov8m.pt")
     CONFIDENCE_THRESHOLD: float = float(os.getenv("CONFIDENCE_THRESHOLD", 0.25))
     IOU_THRESHOLD: float = float(os.getenv("IOU_THRESHOLD", 0.45))
     IMAGE_SIZE: int = int(os.getenv("IMAGE_SIZE", 640))

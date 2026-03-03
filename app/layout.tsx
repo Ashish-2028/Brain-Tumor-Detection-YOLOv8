@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Brain Tumor Detection | AI-Powered MRI Analysis",
-  description: "Advanced YOLOv7-based brain tumor detection system for analyzing MRI images",
+  title: "NeuroSight AI | Brain Tumor Detection",
+  description: "Advanced YOLOv8-based brain tumor detection system for analyzing MRI images",
 };
 
 export default function RootLayout({
