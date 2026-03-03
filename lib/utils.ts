@@ -14,14 +14,14 @@ export function drawBoundingBoxes(
   ctx.drawImage(image, 0, 0);
 
   const colorMap: Record<string, string> = {
-    'Glioma': '#3B82F6',
-    'Pituitary': '#10B981',
-    'Meningioma': '#EF4444',
-    'No Tumor': '#6B7280',
+    'glioma': '#3B82F6',
+    'pituitary': '#10B981',
+    'meningioma': '#EF4444',
+    'no tumor': '#6B7280',
   };
 
   boxes.forEach((box) => {
-    const color = colorMap[box.label] || '#FFFFFF';
+    const color = colorMap[box.label.toLowerCase()] || '#FFFFFF';
     
     ctx.strokeStyle = color;
     ctx.lineWidth = 3;
@@ -76,30 +76,30 @@ export function validateImageFile(file: File): { valid: boolean; error?: string 
 
 export function getTumorColorClass(tumorType: string | null): string {
   const colorMap: Record<string, string> = {
-    'Glioma': 'text-blue-500',
-    'Pituitary': 'text-green-500',
-    'Meningioma': 'text-red-500',
-    'No Tumor': 'text-gray-500',
+    'glioma': 'text-blue-500',
+    'pituitary': 'text-green-500',
+    'meningioma': 'text-red-500',
+    'no tumor': 'text-gray-500',
   };
-  return colorMap[tumorType || ''] || 'text-gray-500';
+  return colorMap[(tumorType || '').toLowerCase()] || 'text-gray-500';
 }
 
 export function getTumorBgColorClass(tumorType: string | null): string {
   const colorMap: Record<string, string> = {
-    'Glioma': 'bg-blue-100 border-blue-300',
-    'Pituitary': 'bg-green-100 border-green-300',
-    'Meningioma': 'bg-red-100 border-red-300',
-    'No Tumor': 'bg-gray-100 border-gray-300',
+    'glioma': 'bg-blue-100 border-blue-300',
+    'pituitary': 'bg-green-100 border-green-300',
+    'meningioma': 'bg-red-100 border-red-300',
+    'no tumor': 'bg-gray-100 border-gray-300',
   };
-  return colorMap[tumorType || ''] || 'bg-gray-100 border-gray-300';
+  return colorMap[(tumorType || '').toLowerCase()] || 'bg-gray-100 border-gray-300';
 }
 
 export function getTumorDescription(tumorType: string | null): string {
   const descriptions: Record<string, string> = {
-    'Glioma': 'A type of tumor that occurs in the brain and spinal cord. Gliomas begin in the glial cells that surround nerve cells.',
-    'Pituitary': 'Tumors that form in the pituitary gland. Most pituitary tumors are noncancerous growths (adenomas).',
-    'Meningioma': 'A tumor that arises from the meninges — the membranes that surround the brain and spinal cord.',
-    'No Tumor': 'No tumor detected in the MRI scan. The brain tissue appears normal.',
+    'glioma': 'A type of tumor that occurs in the brain and spinal cord. Gliomas begin in the glial cells that surround nerve cells.',
+    'pituitary': 'Tumors that form in the pituitary gland. Most pituitary tumors are noncancerous growths (adenomas).',
+    'meningioma': 'A tumor that arises from the meninges — the membranes that surround the brain and spinal cord.',
+    'no tumor': 'No tumor detected in the MRI scan. The brain tissue appears normal.',
   };
-  return descriptions[tumorType || ''] || 'Unknown tumor type.';
+  return descriptions[(tumorType || '').toLowerCase()] || 'Unknown tumor type.';
 }
