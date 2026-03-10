@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Brain Tumor Detection API",
-    description="YOLOv7-based Brain Tumor Detection System with Enhanced Architecture",
+    description="YOLOv8-based Brain Tumor Detection System with Nano & Medium Models",
     version="1.0.0",
     docs_url="/docs",
     redoc_url="/redoc"

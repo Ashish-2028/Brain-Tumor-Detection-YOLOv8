@@ -224,7 +224,7 @@ export default function AnalysisProgress({ isProcessing, onComplete }: AnalysisP
                 clipRule="evenodd" 
               />
             </svg>
-            AI Processing with YOLOv7
+            AI Processing with YOLOv8
           </div>
         </div>
       </div>
